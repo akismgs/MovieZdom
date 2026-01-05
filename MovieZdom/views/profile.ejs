@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Προφίλ - MovieZdom</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { 
+            background-color: #1a1a2e; 
+            color: white; 
+            padding-top: 100px;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .profile-card {
+            background: #16213e;
+            border-radius: 20px;
+            border: 1px solid #e94560;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .stat-box {
+            background: #0f3460;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-box:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+        }
+        .win-rate-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#e94560 <%= (user.stats.wins / (user.stats.totalGames || 1)) * 100 %>%, #0f3460 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .win-rate-circle::before {
+            content: "";
+            width: 100px;
+            height: 100px;
+            background: #16213e;
+            border-radius: 50%;
+            position: absolute;
+        }
+        .win-rate-text {
+            position: relative;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .navbar { background-color: #0f3460 !important; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/dashboard">MovieZdom 🎮</a>
+            <div class="ms-auto">
+                <a href="/dashboard" class="btn btn-outline-light btn-sm px-3">Επιστροφή</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="profile-card animate__animated animate__fadeIn">
+                    <div class="text-center mb-5">
+                        <i class="bi bi-person-circle display-1 text-danger"></i>
+                        <h2 class="fw-bold mt-3"><%= user.username %></h2>
+                        <p class="text-secondary small"><%= user.email %></p>
+                        <hr class="border-secondary opacity-25">
+                    </div>
+
+                    <div class="row g-4 text-center">
+                        <div class="col-12 mb-4">
+                            <div class="win-rate-circle">
+                                <div class="win-rate-text">
+                                    <%= Math.round((user.stats.wins / (user.stats.totalGames || 1)) * 100) %>%
+                                    <br><small style="font-size: 0.6rem;">WIN RATE</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 col-6">
+                            <div class="stat-box">
+                                <i class="bi bi-controller fs-3 text-secondary"></i>
+                                <h6 class="text-secondary mt-2">ΑΓΩΝΕΣ</h6>
+                                <h3 class="fw-bold"><%= user.stats.totalGames %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-box">
+                                <i class="bi bi-trophy-fill fs-3 text-success"></i>
+                                <h6 class="text-success mt-2">ΝΙΚΕΣ</h6>
+                                <h3 class="fw-bold"><%= user.stats.wins %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-box">
+                                <i class="bi bi-x-circle-fill fs-3 text-danger"></i>
+                                <h6 class="text-danger mt-2">ΗΤΤΕΣ</h6>
+                                <h3 class="fw-bold"><%= user.stats.losses %></h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stat-box">
+                                <i class="bi bi-hand-thumbs-up fs-3 text-warning"></i>
+                                <h6 class="text-warning mt-2">ΙΣΟΠΑΛΙΕΣ</h6>
+                                <h3 class="fw-bold"><%= user.stats.draws %></h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 text-center">
+                        <a href="/auth/logout" class="btn btn-outline-danger btn-sm me-2">Αποσύνδεση</a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                            <i class="bi bi-trash3 me-1"></i>Διαγραφή Λογαριασμού
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="deleteAccountModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                        Διαγραφή Λογαριασμού
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Είστε βέβαιοι ότι θέλετε να διαγράψετε οριστικά τον λογαριασμό σας;</p>
+                    <div class="alert alert-danger mb-0" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Προσοχή:</strong> Αυτή η ενέργεια είναι μη αναστρέψιμη. Όλα τα προσωπικά σας δεδομένα, οι στατιστικές και τα lobbies που έχετε δημιουργήσει θα διαγραφούν οριστικά.
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Άκυρο</button>
+                    <form action="/auth/delete-account" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash3 me-1"></i>Ναι, Διαγραφή Λογαριασμού
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

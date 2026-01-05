@@ -1,0 +1,275 @@
+ι<!DOCTYPE html>
+<html lang="el">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dashboard - MovieZdom</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+        <style>
+            body { 
+                background-color: #1a1a2e; 
+                color: white;
+                padding-top: 90px;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+            .lobby-card { 
+                border-radius: 15px; 
+                border: none; 
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+                transition: transform 0.2s, box-shadow 0.2s;
+                background: #16213e; 
+                color: white;
+                height: 100%; /* Για ομοιόμορφα ύψη */
+            }
+            .lobby-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
+            }
+            .navbar { z-index: 1030; background-color: #0f3460 !important; }
+            .category-badge {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                background-color: #e94560;
+            }
+            /* Custom Inputs */
+            .form-control, .form-select {
+                background-color: #16213e !important;
+                border: 1px solid #0f3460 !important;
+                color: white !important;
+            }
+            .form-control:focus, .form-select:focus {
+                border-color: #e94560 !important;
+                box-shadow: 0 0 0 0.25rem rgba(233, 69, 96, 0.25) !important;
+            }
+            ::-webkit-scrollbar { width: 8px; }
+            ::-webkit-scrollbar-track { background: #1a1a2e; }
+            ::-webkit-scrollbar-thumb { background: #e94560; border-radius: 10px; }
+        </style>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark shadow-sm fixed-top">
+            <div class="container">
+                <a class="navbar-brand fw-bold" href="/dashboard">MovieZdom 🎮</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link active" href="/dashboard">Παιχνίδια</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/create-game">Δημιουργία</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/leaderboard">Κατάταξη</a></li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        <li class="nav-item me-3">
+                            <span class="text-light me-2 small">Γεια σου, <%= user.username %></span>
+                            <a class="nav-link text-white d-inline-flex align-items-center" href="/profile">
+                                <i class="bi bi-person-circle fs-4"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-danger btn-sm px-3 shadow-sm" href="/auth/logout">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container pb-5">
+            <% if (error && error.length > 0) { %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <% } %>
+
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-8">
+                    <h2 class="fw-bold m-0 text-white">Διαθέσιμα Lobbies</h2>
+                    <p class="text-secondary">Βρες ένα δωμάτιο ή φτιάξε το δικό σου.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="/create-game" class="btn btn-danger shadow-sm px-4">
+                        <i class="bi bi-plus-lg me-1"></i> Νέο Παιχνίδι
+                    </a>
+                </div>
+            </div>
+
+            <div class="row mb-5 g-3">
+                <div class="col-md-7">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-dark border-0 text-secondary"><i class="bi bi-search"></i></span>
+                        <input type="text" id="lobbySearch" class="form-control border-0" placeholder="Αναζήτηση lobby με όνομα...">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-dark border-0 text-secondary"><i class="bi bi-filter"></i></span>
+                        <select id="categoryFilter" class="form-select border-0">
+                            <option value="all">Όλες οι Κατηγορίες</option>
+                            <option value="Δράση">Δράση</option>
+                            <option value="Δράμα">Δράμα</option>
+                            <option value="Κινούμενα Σχέδια">Κινούμενα Σχέδια</option>
+                            <option value="Ρομαντική">Ρομαντική</option>
+                            <option value="Κωμωδία">Κωμωδία</option>
+                            <option value="Περιπέτεια">Περιπέτεια</option>
+                            <option value="Τρόμου">Τρόμου</option>
+                            <option value="Φαντασίας">Φαντασίας</option>
+                            <option value="Επιστημονική Φαντασία">Επιστημονική Φαντασία</option>
+                            <option value="Οικογενειακή">Οικογενειακή</option>
+                            <option value="Ιστορική">Ιστορική</option>
+                            <option value="Έγκλημα">Έγκλημα</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row" id="lobbyList">
+                <% if (lobbies && lobbies.length > 0) { %>
+                    <% lobbies.forEach(lobby => { %>
+                        <div class="col-md-4 mb-4 lobby-item" 
+                            id="card-<%= lobby._id %>" 
+                            data-name="<%= lobby.name.toLowerCase() %>" 
+                            data-category="<%= lobby.category %>">
+                            <div class="card lobby-card p-4 text-center">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge category-badge"><%= lobby.category %></span>
+                                    <% if(lobby.creator && lobby.creator._id.toString() === user._id.toString()) { %>
+                                        <form action="/delete-lobby/<%= lobby._id %>" method="POST" onsubmit="return confirm('Σίγουρα διαγραφή;')">
+                                            <button type="submit" class="btn btn-link text-danger p-0"><i class="bi bi-trash3"></i></button>
+                                        </form>
+                                    <% } %>
+                                </div>
+                                
+                                <h5 class="card-title fw-bold mb-1"><%= lobby.name %></h5>
+                                <p class="text-secondary small mb-3">Host: <%= lobby.creator ? lobby.creator.username : 'Unknown' %></p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-3 bg-dark rounded p-2">
+                                    <span class="small text-secondary"><i class="bi bi-people me-1"></i> Παίκτες</span>
+                                    <span class="fw-bold player-count-badge badge <%= lobby.players.length >= 2 ? 'bg-danger' : 'bg-success' %>" id="count-<%= lobby._id %>">
+                                        <%= lobby.players.length %> / 2
+                                    </span>
+                                </div>
+
+                                <% if (lobby.password && lobby.password !== "") { %>
+                                    <div class="mb-2 small text-warning">
+                                        <i class="bi bi-lock-fill"></i> Ιδιωτικό
+                                    </div>
+                                    <button onclick="openPasswordModal('<%= lobby._id %>', '<%= lobby.name %>')" class="btn btn-warning w-100 mt-2 text-dark fw-bold shadow-sm">
+                                        Είσοδος με Κωδικό
+                                    </button>
+                                <% } else { %>
+                                    <a href="/join-lobby/<%= lobby._id %>" class="btn btn-outline-info w-100 mt-2 fw-bold">
+                                        Είσοδος στο Lobby
+                                    </a>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div id="emptyMessage" class="col-12 text-center py-5">
+                        <i class="bi bi-controller display-1 text-secondary opacity-25"></i>
+                        <h4 class="text-secondary mt-3">Δεν υπάρχουν ενεργά lobbies.</h4>
+                        <a href="/create-game" class="btn btn-outline-danger mt-2">Δημιουργία του πρώτου Lobby!</a>
+                    </div>
+                <% } %>
+
+                <div id="noResults" class="col-12 text-center py-5" style="display: none;">
+                    <i class="bi bi-search display-1 text-secondary opacity-25"></i>
+                    <h4 class="text-secondary mt-3">Δεν βρέθηκαν lobbies με αυτά τα κριτήρια.</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow bg-dark text-white">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="modalLobbyName">Είσοδος στο Lobby</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="/join-private" method="POST">
+                        <div class="modal-body p-4">
+                            <input type="hidden" name="lobbyId" id="modalLobbyId">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Κωδικός Δωματίου</label>
+                                <input type="password" name="password" class="form-control bg-secondary text-white border-0" placeholder="Εισάγετε τον κωδικό..." required autofocus>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Άκυρο</button>
+                            <button type="submit" class="btn btn-danger px-4">Σύνδεση</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script>
+            const socket = io();
+            socket.emit('enterDashboard');
+
+            // Logic για Search και Φιλτράρισμα
+            const searchInput = document.getElementById('lobbySearch');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const lobbyList = document.getElementById('lobbyList');
+            const noResults = document.getElementById('noResults');
+
+            function performFiltering() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCategory = categoryFilter.value;
+                const items = document.querySelectorAll('.lobby-item');
+                let visibleCount = 0;
+
+                items.forEach(item => {
+                    const name = item.getAttribute('data-name');
+                    const category = item.getAttribute('data-category');
+
+                    const matchesSearch = name.includes(searchTerm);
+                    const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+
+                    if (matchesSearch && matchesCategory) {
+                        item.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Εμφάνιση μηνύματος "No Results" αν χρειάζεται
+                if (items.length > 0) {
+                    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            }
+
+            searchInput.addEventListener('input', performFiltering);
+            categoryFilter.addEventListener('change', performFiltering);
+
+            // Socket Updates
+            socket.on('updateLobbyStatus', (data) => {
+                const badge = document.getElementById(`count-${data.id}`);
+                if (badge) {
+                    badge.innerText = `${data.count} / 2`;
+                    badge.className = `fw-bold player-count-badge badge ${data.count >= 2 ? 'bg-danger' : 'bg-success'}`;
+                }
+            });
+
+            socket.on('refreshLobbies', () => {
+                window.location.reload();
+            });
+
+            function openPasswordModal(id, name) {
+                document.getElementById('modalLobbyId').value = id;
+                document.getElementById('modalLobbyName').innerText = "Είσοδος στο: " + name;
+                const myModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+                myModal.show();
+            }
+        </script>
+    </body>
+</html>

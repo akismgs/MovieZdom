@@ -1,0 +1,47 @@
+/* public/css/style.css */
+
+body {
+  background: #f4f7f6; /* Ένα απαλό γκρι/γαλάζιο φόντο */
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  background: white;
+  padding: 2rem;
+  width: 100%;
+  max-width: 450px;
+}
+
+.auth-card h2 {
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: #5a67d8;
+  border: none;
+  padding: 0.7rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #434190;
+  transform: translateY(-2px);
+}
+
+/* Custom styling για τα error μηνύματα */
+.error-feedback {
+  color: #e53e3e;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: none; /* Θα το εμφανίζουμε με το JS */
+}

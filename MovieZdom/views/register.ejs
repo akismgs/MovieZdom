@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="el">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Εγγραφή - My Game</title>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" href="/css/style.css">
+  </head>
+
+  <body>
+
+    <div class="auth-card">
+      <h2>Δημιουργία Λογαριασμού</h2>
+      
+      <form action="/auth/register" method="POST" id="registerForm">
+        <div class="mb-3">
+          <label class="form-label">Όνομα Χρήστη</label>
+          <input type="text" name="username" id="username" class="form-control" placeholder="π.χ. Player1" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" id="email" class="form-control" placeholder="email@example.com" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Κωδικός</label>
+          <input type="password" name="password" id="password" class="form-control" placeholder="******" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Επιβεβαίωση Κωδικού</label>
+          <input type="password" name="repeatPassword" id="repeatPassword" class="form-control" placeholder="******" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-2">Εγγραφή</button>
+      </form>
+
+      <div class="text-center mt-4">
+        <p class="small text-muted">Έχεις ήδη λογαριασμό; 
+          <a href="/auth/login" class="text-decoration-none">Συνδέσου εδώ</a>
+        </p>
+      </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+  </body>
+</html>

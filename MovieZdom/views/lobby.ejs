@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieZdom - <%= lobby.name %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body { background-color: #1a1a2e; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        
+        /* Lobby Style */
+        .lobby-card { background: #16213e; padding: 2.5rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 500px; text-align: center; border: 1px solid #e94560; }
+        .loader { border: 5px solid #0f3460; border-top: 5px solid #e94560; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .player-tag { background: #0f3460; padding: 12px; border-radius: 10px; margin: 8px; font-weight: bold; border-left: 4px solid #e94560; flex: 1 1 40%; }
+
+        /* Game Style */
+        #game-section { display: none; width: 100%; max-width: 800px; text-align: center; padding: 20px; }
+        .timer-container { height: 12px; width: 100%; background: #0f3460; position: fixed; top: 0; left: 0; z-index: 1000; }
+        .timer-bar { height: 100%; width: 100%; background: #e94560; }
+        
+        .option-btn { 
+            background: #0f3460; border: 2px solid #1a1a2e; color: white; padding: 20px; 
+            border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 1.2rem; font-weight: 500;
+            display: flex; align-items: center; justify-content: center; height: 100%;
+        }
+        .option-btn:hover { background: #1e3a5f; transform: translateY(-3px); border-color: #e94560; }
+        
+        .option-selected { background: #fca311 !important; border-color: #ffb703 !important; color: #000 !important; font-weight: bold; }
+        .option-correct { background: #2a9d8f !important; border-color: #e9c46a !important; color: white !important; }
+        .option-wrong { background: #e63946 !important; border-color: #ff4d4d !important; color: white !important; }
+
+        #countdown-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 26, 46, 0.95); display: none; justify-content: center;
+            align-items: center; z-index: 2000; font-size: 15rem; font-weight: 900; color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="countdown-overlay">3</div>
+
+    <div id="lobby-section" class="lobby-card">
+        <h2 class="fw-bold mb-2"><%= lobby.name %></h2>
+        <span class="badge bg-danger px-3 py-2 mb-4"><%= lobby.category %></span>
+        <div id="loading-ui">
+            <div class="loader"></div>
+            <h4 id="status-text">Αναμονή για παίκτες...</h4>
+            <p class="text-secondary"><span id="player-count" class="fw-bold text-white"><%= lobby.players.length %></span> / 2</p>
+        </div>
+        <div id="player-list" class="d-flex flex-wrap justify-content-center mt-3">
+            <% lobby.players.forEach(player => { %>
+                <div class="player-tag"><i class="bi bi-person-fill"></i> <%= player.username %></div>
+            <% }) %>
+        </div>
+    </div>
+
+    <div id="game-section">
+        <div class="timer-container"><div id="timerBar" class="timer-bar"></div></div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4 px-3">
+            <h5 class="text-secondary m-0">Ερώτηση <span id="qIndex" class="text-white">1</span>/10</h5>
+            <div class="bg-dark px-4 py-2 rounded-pill border border-warning shadow">
+                <h4 class="fw-bold text-warning m-0">Score: <span id="myScore">0</span></h4>
+            </div>
+        </div>
+
+        <div class="card bg-transparent border-0 mb-5">
+            <h2 id="questionText" class="display-6 fw-bold">Προετοιμασία ερώτησης...</h2>
+        </div>
+
+        <div id="optionsGrid" class="row g-4 px-2"></div>
+
+        <div id="statusMsg" class="mt-5 fs-4 fw-bold"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const lobbyId = "<%= lobby._id %>";
+        let score = 0;
+
+        socket.emit('joinLobby', lobbyId);
+
+        socket.on('playerJoined', (data) => {
+            document.getElementById('player-count').innerText = data.count;
+            const list = document.getElementById('player-list');
+            list.innerHTML = data.players.map(p => `<div class="player-tag"><i class="bi bi-person-fill"></i> ${p}</div>`).join('');
+        });
+
+        socket.on('allPlayersReady', () => {
+            document.getElementById('status-text').innerText = "Το δωμάτιο γέμισε! Ετοιμαστείτε...";
+            setTimeout(() => {
+                document.getElementById('lobby-section').style.display = 'none';
+                startCountdown();
+            }, 2000);
+        });
+
+        function startCountdown() {
+            const overlay = document.getElementById('countdown-overlay');
+            overlay.style.display = 'flex';
+            let count = 3;
+            const timer = setInterval(() => {
+                count--;
+                if(count === 0) overlay.innerText = "ΠΑΜΕ!";
+                else if(count < 0) {
+                    clearInterval(timer);
+                    overlay.style.display = 'none';
+                    document.getElementById('game-section').style.display = 'block';
+                    socket.emit('readyForFirstQuestion', lobbyId);
+                } else overlay.innerText = count;
+            }, 1000);
+        }
+
+        socket.on('newQuestion', (data) => {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('option-selected', 'option-correct', 'option-wrong');
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            });
+
+            document.getElementById('qIndex').innerText = data.index + 1;
+            document.getElementById('questionText').innerText = data.question;
+            
+            const msg = document.getElementById('statusMsg');
+            msg.innerText = "Επιλέξτε απάντηση!";
+            msg.className = "mt-5 fs-4 fw-bold text-info";
+            
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            
+            const bar = document.getElementById('timerBar');
+            bar.style.transition = 'none';
+            bar.style.width = '100%';
+            void bar.offsetWidth; 
+            bar.style.transition = 'width 10s linear';
+            bar.style.width = '0%';
+
+            data.options.forEach(opt => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+                col.innerHTML = `<div class="option-btn" onclick="handleSelect(this, '${opt.replace(/'/g, "\\'")}')">${opt}</div>`;
+                grid.appendChild(col);
+            });
+        });
+
+        function handleSelect(btn, val) {
+            document.querySelectorAll('.option-btn').forEach(b => b.style.pointerEvents = 'none');
+            btn.classList.add('option-selected');
+            document.getElementById('statusMsg').innerText = "Περιμένοντας τον αντίπαλο...";
+            socket.emit('submitAnswer', { lobbyId, answer: val });
+        }
+
+        socket.on('revealResult', (data) => {
+            const bar = document.getElementById('timerBar');
+            const computedStyle = window.getComputedStyle(bar);
+            const currentWidth = computedStyle.getPropertyValue('width');
+            bar.style.transition = 'none';
+            bar.style.width = currentWidth;
+
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(btn => {
+                if(btn.innerText === data.correctAnswer) {
+                    btn.classList.remove('option-selected');
+                    btn.classList.add('option-correct');
+                } else if(btn.classList.contains('option-selected')) {
+                    btn.classList.add('option-wrong');
+                }
+            });
+
+            const msg = document.getElementById('statusMsg');
+            if(data.isCorrect) {
+                score += 1; // 1 πόντος ανά ερώτηση για να συμβαδίζει με τον server
+                document.getElementById('myScore').innerText = score;
+                msg.innerText = "ΣΩΣΤΟ!";
+                msg.className = "mt-5 fs-4 fw-bold text-success animate__animated animate__bounceIn";
+            } else {
+                msg.innerText = "ΛΑΘΟΣ!";
+                msg.className = "mt-5 fs-4 fw-bold text-danger animate__animated animate__shakeX";
+            }
+        });
+
+        socket.on('gameOver', (data) => {
+            const grid = document.getElementById('optionsGrid');
+            const questionText = document.getElementById('questionText');
+            
+            // Υπολογισμός αποτελέσματος βάσει των IDs
+            const myId = socket.id;
+            const playerIds = Object.keys(data.scores);
+            const opponentId = playerIds.find(id => id !== myId);
+
+            const myFinalScore = data.scores[myId] || 0;
+            const oppFinalScore = data.scores[opponentId] || 0;
+
+            let resultTitle = "";
+            let resultColor = "";
+
+            if (data.draw) {
+                resultTitle = "ΙΣΟΠΑΛΙΑ! 🤝";
+                resultColor = "text-warning";
+            } else if (myFinalScore > oppFinalScore) {
+                resultTitle = "ΝΙΚΗΤΗΣ! 🏆";
+                resultColor = "text-success";
+            } else {
+                resultTitle = "ΗΤΤΑ... 💀";
+                resultColor = "text-danger";
+            }
+
+            questionText.innerHTML = `<span class="${resultColor} animate__animated animate__zoomIn">${resultTitle}</span>`;
+            
+            grid.innerHTML = `
+                <div class="col-12 animate__animated animate__fadeInUp">
+                    <div class="card p-5 shadow-lg" style="background: #16213e; color: white; border: 2px solid #fca311;">
+                        <h3 class="mb-4">Τελικό Αποτέλεσμα</h3>
+                        <div class="d-flex justify-content-around align-items-center mb-4">
+                            <div>
+                                <p class="text-secondary mb-0 small">ΕΣΥ</p>
+                                <h1 class="display-3 fw-bold">${myFinalScore}</h1>
+                            </div>
+                            <div class="display-5 text-secondary">vs</div>
+                            <div>
+                                <p class="text-secondary mb-0 small">ΑΝΤΙΠΑΛΟΣ</p>
+                                <h1 class="display-3 fw-bold">${oppFinalScore}</h1>
+                            </div>
+                        </div>
+                        <hr style="background-color: white">
+                        <a href="/dashboard" class="btn btn-warning fw-bold mt-2 px-5 py-3">ΕΠΙΣΤΡΟΦΗ ΣΤΟ DASHBOARD</a>
+                    </div>
+                </div>`;
+            document.getElementById('statusMsg').innerText = "";
+            document.getElementById('timerBar').style.width = "0%";
+        });
+    </script>
+</body>
+</html>
