@@ -57,8 +57,8 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const verificationUrl = `http://localhost:3000/auth/verify/${token}`;
-    
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;   
+     
     await transporter.sendMail({
       to: email,
       subject: 'Επιβεβαίωση Λογαριασμού',
