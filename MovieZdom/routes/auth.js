@@ -28,6 +28,7 @@ router.get('/register', (req, res) => {
 });
 
 // POST: Διαδικασία Εγγραφής
+// POST: Διαδικασία Εγγραφής
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password, repeatPassword } = req.body;
@@ -52,27 +53,33 @@ router.post('/register', async (req, res) => {
       password: hashedPassword,
       verificationToken: token,
       isVerified: false,
-      createdAt: new Date() // TTL Index έναρξη
+      createdAt: new Date()
     });
 
     await newUser.save();
 
-    const verificationUrl = `https://moviezdom.onrender.com/auth/verify/${token}`;   
-     
-    await transporter.sendMail({
+    // ΕΔΩ Η ΑΛΛΑΓΗ: Βγάζουμε το await και το URL το παίρνουμε δυναμικά
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`; 
+      
+    transporter.sendMail({
       to: email,
       subject: 'Επιβεβαίωση Λογαριασμού',
       html: `<h3>Καλώς ήρθες!</h3>
-            <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου πριν διαγραφεί:</p>
-            <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
+             <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου:</p>
+             <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
+    }).then(() => {
+      console.log('📧 Email sent to:', email);
+    }).catch(err => {
+      console.log('❌ Mail failed but user was saved:', err.message);
     });
 
-    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας (λήξη σε 15 λεπτά).');
+    // Ο χρήστης φεύγει αμέσως από τη σελίδα εγγραφής
+    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας.');
     res.redirect('/auth/login');
 
   } catch (error) {
-    console.error(error);
-    req.flash('error', 'Κάτι πήγε στραβά στην εγγραφή.');
+    console.error("Registration Error:", error);
+    req.flash('error', 'Κάτι πήγε στραβά.');
     res.redirect('/auth/register');
   }
 });
