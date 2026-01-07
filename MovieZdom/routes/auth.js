@@ -57,7 +57,7 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;   
+    const verificationUrl = `https://moviezdom.onrender.com/auth/verify/${token}`;   
      
     await transporter.sendMail({
       to: email,
