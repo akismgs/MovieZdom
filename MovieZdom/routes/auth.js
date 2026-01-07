@@ -7,17 +7,16 @@ const User = require('../models/User');
 const Lobby = require('../models/Lobby');
 const nodemailer = require('nodemailer');
 
-// Ρύθμιση του Nodemailer για Deployment
+// Ρύθμιση του Nodemailer
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
-  secure: true, // Χρήση SSL
+  secure: true, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    // Αυτό είναι το "κλειδί" για να μην κόβει το Render τη σύνδεση
     rejectUnauthorized: false
   }
 });
@@ -33,7 +32,6 @@ router.get('/register', (req, res) => {
   res.render('register');
 });
 
-// POST: Διαδικασία Εγγραφής
 // POST: Διαδικασία Εγγραφής
 router.post('/register', async (req, res) => {
   try {
@@ -59,33 +57,27 @@ router.post('/register', async (req, res) => {
       password: hashedPassword,
       verificationToken: token,
       isVerified: false,
-      createdAt: new Date()
+      createdAt: new Date() // TTL Index έναρξη
     });
 
     await newUser.save();
 
-    // ΕΔΩ Η ΑΛΛΑΓΗ: Βγάζουμε το await και το URL το παίρνουμε δυναμικά
-    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`; 
-      
-    transporter.sendMail({
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;   
+     
+    await transporter.sendMail({
       to: email,
       subject: 'Επιβεβαίωση Λογαριασμού',
       html: `<h3>Καλώς ήρθες!</h3>
-             <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου:</p>
-             <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
-    }).then(() => {
-      console.log('📧 Email sent to:', email);
-    }).catch(err => {
-      console.log('❌ Mail failed but user was saved:', err.message);
+            <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου πριν διαγραφεί:</p>
+            <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
     });
 
-    // Ο χρήστης φεύγει αμέσως από τη σελίδα εγγραφής
-    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας.');
+    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας (λήξη σε 15 λεπτά).');
     res.redirect('/auth/login');
 
   } catch (error) {
-    console.error("Registration Error:", error);
-    req.flash('error', 'Κάτι πήγε στραβά.');
+    console.error(error);
+    req.flash('error', 'Κάτι πήγε στραβά στην εγγραφή.');
     res.redirect('/auth/register');
   }
 });
