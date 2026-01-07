@@ -32,7 +32,6 @@ router.get('/register', (req, res) => {
   res.render('register');
 });
 
-// POST: Διαδικασία Εγγραφής
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password, repeatPassword } = req.body;
@@ -57,26 +56,33 @@ router.post('/register', async (req, res) => {
       password: hashedPassword,
       verificationToken: token,
       isVerified: false,
-      createdAt: new Date() // TTL Index έναρξη
+      createdAt: new Date()
     });
 
+    // 1. Πρώτα σώζουμε στη βάση
     await newUser.save();
+    console.log("✅ Χρήστης αποθηκεύτηκε στη βάση");
 
-    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;   
-     
-    await transporter.sendMail({
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`; 
+      
+    // 2. Στέλνουμε το email ΧΩΡΙΣ await για να μην παγώσει η σελίδα
+    transporter.sendMail({
       to: email,
       subject: 'Επιβεβαίωση Λογαριασμού',
       html: `<h3>Καλώς ήρθες!</h3>
-            <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου πριν διαγραφεί:</p>
-            <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
+             <p>Πατήστε εδώ για ενεργοποίηση: <a href="${verificationUrl}">${verificationUrl}</a></p>`
+    }).then(() => {
+      console.log('📧 Email sent successfully');
+    }).catch(err => {
+      console.error('❌ Email failed:', err.message);
     });
 
-    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας (λήξη σε 15 λεπτά).');
+    // 3. Στέλνουμε αμέσως τον χρήστη στο login
+    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας.');
     res.redirect('/auth/login');
 
   } catch (error) {
-    console.error(error);
+    console.error("❌ Registration Error:", error);
     req.flash('error', 'Κάτι πήγε στραβά στην εγγραφή.');
     res.redirect('/auth/register');
   }
