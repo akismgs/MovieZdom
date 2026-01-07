@@ -7,18 +7,17 @@ const User = require('../models/User');
 const Lobby = require('../models/Lobby');
 const nodemailer = require('nodemailer');
 
-// Ρύθμιση του Nodemailer
 // Ρύθμιση του Nodemailer για Deployment
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
-  secure: true, // true για την πόρτα 465
+  secure: true, // Χρήση SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
   tls: {
-    // Αυτό βοηθάει να μην κόβεται η σύνδεση από το Render
+    // Αυτό είναι το "κλειδί" για να μην κόβει το Render τη σύνδεση
     rejectUnauthorized: false
   }
 });
