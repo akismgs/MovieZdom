@@ -8,11 +8,18 @@ const Lobby = require('../models/Lobby');
 const nodemailer = require('nodemailer');
 
 // Ρύθμιση του Nodemailer
+// Ρύθμιση του Nodemailer για Deployment
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // true για την πόρτα 465
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    // Αυτό βοηθάει να μην κόβεται η σύνδεση από το Render
+    rejectUnauthorized: false
   }
 });
 
