@@ -10,8 +10,8 @@ const nodemailer = require('nodemailer');
 // Ρύθμιση του Nodemailer
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // SSL
+  port: 465,
+  secure: true, // SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -63,7 +63,7 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const verificationUrl = `https://moviezdom.onrender.com/auth/verify/${token}`;    
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;    
 
     // Στέλνουμε το mail χωρίς await
     transporter.sendMail({
