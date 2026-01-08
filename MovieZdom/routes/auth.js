@@ -9,10 +9,16 @@ const nodemailer = require('nodemailer');
 
 // Ρύθμιση του Nodemailer
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    // Αυτό επιτρέπει τη σύνδεση ακόμα και αν το Render έχει "περίεργα" πιστοποιητικά
+    rejectUnauthorized: false
   }
 });
 
@@ -57,15 +63,18 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const verificationUrl = `http://localhost:3000/auth/verify/${token}`;
-    
-    await transporter.sendMail({
+    const verificationUrl = `${req.protocol}://${req.get('host')}/auth/verify/${token}`;    
+
+    // Στέλνουμε το mail χωρίς await
+    transporter.sendMail({
       to: email,
       subject: 'Επιβεβαίωση Λογαριασμού',
       html: `<h3>Καλώς ήρθες!</h3>
-            <p>Έχεις 15 λεπτά για να ενεργοποιήσεις το λογαριασμό σου πριν διαγραφεί:</p>
-            <a href="${verificationUrl}">Πατήστε εδώ για ενεργοποίηση</a>`
-    });
+            <p>Πατήστε εδώ: <a href="${verificationUrl}">${verificationUrl}</a></p>`
+    }).catch(err => console.log("Mail Error:", err.message));
+
+    req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας.');
+    res.redirect('/auth/login');
 
     req.flash('success', 'Η εγγραφή έγινε! Ελέγξτε το email σας (λήξη σε 15 λεπτά).');
     res.redirect('/auth/login');
