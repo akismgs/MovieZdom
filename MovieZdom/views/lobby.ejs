@@ -21,16 +21,37 @@
         .timer-container { height: 12px; width: 100%; background: #0f3460; position: fixed; top: 0; left: 0; z-index: 1000; }
         .timer-bar { height: 100%; width: 100%; background: #e94560; }
         
+        .question-info { color: #ffffff !important; font-weight: 700 !important; font-size: 1.1rem !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8) !important; }
+        .score-info { color: #ffd700 !important; font-weight: 700 !important; font-size: 1.1rem !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8) !important; }
+        
+        #questionText {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.6rem !important;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9) !important;
+            line-height: 1.4 !important;
+        }
+        
         .option-btn { 
-            background: #0f3460; border: 2px solid #1a1a2e; color: white; padding: 20px; 
-            border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 1.2rem; font-weight: 500;
+            background: #0f3460; border: 2px solid #ffb703; color: #ffffff !important; padding: 20px; 
+            border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 1.1rem !important; font-weight: 600 !important;
             display: flex; align-items: center; justify-content: center; height: 100%;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8) !important;
         }
         .option-btn:hover { background: #1e3a5f; transform: translateY(-3px); border-color: #e94560; }
         
-        .option-selected { background: #fca311 !important; border-color: #ffb703 !important; color: #000 !important; font-weight: bold; }
-        .option-correct { background: #2a9d8f !important; border-color: #e9c46a !important; color: white !important; }
-        .option-wrong { background: #e63946 !important; border-color: #ff4d4d !important; color: white !important; }
+        .option-selected { background: #fca311 !important; border-color: #ffb703 !important; color: #000000 !important; font-weight: 700 !important; }
+        .option-correct { background: #2a9d8f !important; border-color: #e9c46a !important; color: #ffffff !important; font-weight: 700 !important; }
+        .option-wrong { background: #e63946 !important; border-color: #ff4d4d !important; color: #ffffff !important; font-weight: 700 !important; }
+        
+        #statusMsg {
+            font-weight: 700 !important;
+            font-size: 1.5rem !important;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9) !important;
+        }
+        #statusMsg.text-info { color: #00d9ff !important; }
+        #statusMsg.text-success { color: #28a745 !important; }
+        #statusMsg.text-danger { color: #dc3545 !important; }
 
         #countdown-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -63,9 +84,9 @@
         <div class="timer-container"><div id="timerBar" class="timer-bar"></div></div>
         
         <div class="d-flex justify-content-between align-items-center mb-4 px-3">
-            <h5 class="text-secondary m-0">Ερώτηση <span id="qIndex" class="text-white">1</span>/10</h5>
+            <span class="question-info">Ερώτηση <span id="qIndex">1</span>/10</span>
             <div class="bg-dark px-4 py-2 rounded-pill border border-warning shadow">
-                <h4 class="fw-bold text-warning m-0">Score: <span id="myScore">0</span></h4>
+                <span class="score-info">Score: <span id="myScore">0</span></span>
             </div>
         </div>
 
@@ -137,7 +158,7 @@
             bar.style.transition = 'none';
             bar.style.width = '100%';
             void bar.offsetWidth; 
-            bar.style.transition = 'width 10s linear';
+            bar.style.transition = 'width 15s linear';
             bar.style.width = '0%';
 
             data.options.forEach(opt => {

@@ -90,7 +90,107 @@ app.post('/create-lobby', isAuth, async (req, res) => {
   try {
     const { name, password, category, difficulty } = req.body;
     const filtered = allQuestions.filter(q => q.category === category && q.difficulty === difficulty);
-    const selected = filtered.sort(() => 0.5 - Math.random()).slice(0, 10);
+    
+    // Remove duplicates based on question text
+    const uniqueQuestions = [];
+    const seenQuestions = new Set();
+    for (const q of filtered) {
+      const questionKey = q.question.trim().toLowerCase();
+      if (!seenQuestions.has(questionKey)) {
+        seenQuestions.add(questionKey);
+        uniqueQuestions.push(q);
+      }
+    }
+    
+    // Fisher-Yates shuffle algorithm for proper randomization
+    const shuffled = [...uniqueQuestions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    let selected = shuffled.slice(0, 10);
+    
+    // If not enough unique questions, use fallback strategy
+    if (selected.length < 10) {
+      const remaining = 10 - selected.length;
+      console.log(`There are not enough unique questions for ${category} / ${difficulty}. Using fallback strategy to reach 10 questions.`);
+      
+      const fallbackQuestions = [];
+      
+      // Helper function to get unique questions from a filtered set
+      const getUniqueQuestions = (questionSet, maxNeeded) => {
+        const unique = [];
+        for (const q of questionSet) {
+          if (unique.length >= maxNeeded) break;
+          const questionKey = q.question.trim().toLowerCase();
+          if (!seenQuestions.has(questionKey)) {
+            seenQuestions.add(questionKey);
+            unique.push(q);
+          }
+        }
+        // Shuffle
+        for (let i = unique.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [unique[i], unique[j]] = [unique[j], unique[i]];
+        }
+        return unique;
+      };
+      
+      // Strategy 1: Same category, different difficulty
+      if (fallbackQuestions.length < remaining) {
+        const otherDifficulties = ['Easy', 'Medium', 'Hard'].filter(d => d !== difficulty);
+        for (const otherDiff of otherDifficulties) {
+          if (fallbackQuestions.length >= remaining) break;
+          const sameCategoryDiff = allQuestions.filter(q => 
+            q.category === category && q.difficulty === otherDiff
+          );
+          const unique = getUniqueQuestions(sameCategoryDiff, remaining - fallbackQuestions.length);
+          fallbackQuestions.push(...unique);
+        }
+      }
+      
+      // Strategy 2: Different category, same difficulty
+      if (fallbackQuestions.length < remaining) {
+        const allCategories = [...new Set(allQuestions.map(q => q.category))];
+        const otherCategories = allCategories.filter(c => c !== category);
+        for (const otherCat of otherCategories) {
+          if (fallbackQuestions.length >= remaining) break;
+          const sameDifficultyDiff = allQuestions.filter(q => 
+            q.category === otherCat && q.difficulty === difficulty
+          );
+          const unique = getUniqueQuestions(sameDifficultyDiff, remaining - fallbackQuestions.length);
+          fallbackQuestions.push(...unique);
+        }
+      }
+      
+      // Strategy 3: Different category, different difficulty (last resort)
+      if (fallbackQuestions.length < remaining) {
+        const allCategories = [...new Set(allQuestions.map(q => q.category))];
+        const otherCategories = allCategories.filter(c => c !== category);
+        const otherDifficulties = ['Easy', 'Medium', 'Hard'].filter(d => d !== difficulty);
+        
+        for (const otherCat of otherCategories) {
+          if (fallbackQuestions.length >= remaining) break;
+          for (const otherDiff of otherDifficulties) {
+            if (fallbackQuestions.length >= remaining) break;
+            const differentBoth = allQuestions.filter(q => 
+              q.category === otherCat && q.difficulty === otherDiff
+            );
+            const unique = getUniqueQuestions(differentBoth, remaining - fallbackQuestions.length);
+            fallbackQuestions.push(...unique);
+          }
+        }
+      }
+      
+      selected = [...selected, ...fallbackQuestions.slice(0, remaining)];
+    }
+    
+    // Final validation: need at least 10 questions total
+    if (selected.length < 10) {
+      req.flash('error', `Δεν υπάρχουν αρκετές ερωτήσεις για ${category} / ${difficulty}. Βρέθηκαν μόνο ${selected.length} ερωτήσεις. Χρειάζονται τουλάχιστον 10.`);
+      return res.redirect('/create-game');
+    }
 
     const newLobby = new Lobby({
       name, password, category,
@@ -247,7 +347,7 @@ async function sendQuestion(lobbyId, index) {
     clearTimeout(gameStates[lobbyId].timer);
   }
 
-  if (!lobby || index >= 10) {
+  if (!lobby || !lobby.questions || index >= lobby.questions.length) {
     const state = gameStates[lobbyId];
     if (!state) return;
 
@@ -289,6 +389,12 @@ async function sendQuestion(lobbyId, index) {
     return;
   }
 
+  // Validate question exists
+  if (!lobby.questions[index]) {
+    console.error(`Question at index ${index} not found for lobby ${lobbyId}`);
+    return;
+  }
+
   // Αρχικοποίηση scores στην πρώτη ερώτηση
   let currentScores = (index === 0) ? {} : gameStates[lobbyId].scores;
 
@@ -301,7 +407,7 @@ async function sendQuestion(lobbyId, index) {
       if (gameStates[lobbyId] && gameStates[lobbyId].currentIndex === index) {
         reveal(lobbyId, index); 
       }
-    }, 10500)
+    }, 15000)
   };
 
   io.to(lobbyId).emit('newQuestion', {
